@@ -100,12 +100,3 @@ Then visit [http://localhost:8080](http://localhost:8080) in your web browser.
 
 ---
 
-## 🌐 How to Host Online
-
-This project is 100% static (HTML, CSS, JavaScript) and requires zero build steps or server-side runtimes.
-
-1. **GitHub Pages**:
-   - Push this folder to a GitHub repository.
-   - In repo Settings -> Pages, select the `main` branch as the source and save.
-2. **Vercel / Netlify / Cloudflare Pages**:
-   - Drag and drop the `jungle-escape` folder onto [Netlify Drop](https://app.netlify.com/drop) or link the GitHub repo in Vercel.
