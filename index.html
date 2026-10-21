@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#071b12">
+  <title>JUNGLE ESCAPE — 3D Endless Runner</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Game Container & 3D Canvas -->
+  <div id="game-container">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- UI Overlay Layer -->
+    <div id="ui-overlay" class="ui-layer">
+
+      <!-- =================================================================
+           1. LOADING SCREEN
+           ================================================================= -->
+      <div id="loading-screen">
+        <div class="loader-logo">JUNGLE ESCAPE</div>
+        <div class="loader-sub">Ancient Temple Adventure</div>
+        <div class="progress-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="loading-tip" class="loading-tip">Initializing 3D jungle world...</div>
+      </div>
+
+      <!-- =================================================================
+           2. MAIN MENU
+           ================================================================= -->
+      <div id="main-menu" class="hidden interactive">
+        <div class="menu-top-bar">
+          <div class="high-score-tag">
+            <span>🏆 Best:</span>
+            <span id="menu-best-score">0</span>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <div class="high-score-tag">
+              <span>🪙 Total:</span>
+              <span id="menu-total-coins">0</span>
+            </div>
+            <button id="btn-sound-toggle" class="btn-icon-round" title="Toggle Sound">🔊</button>
+          </div>
+        </div>
+
+        <div class="menu-center">
+          <h1 class="game-title">JUNGLE<br>ESCAPE</h1>
+          <p class="game-tagline">3D Endless Runner Adventure</p>
+
+          <div class="menu-actions">
+            <button id="btn-start-game" class="btn btn-primary">START RUN</button>
+            <button id="btn-how-to-play" class="btn">HOW TO PLAY</button>
+            <button id="btn-settings" class="btn">SETTINGS</button>
+            <button id="btn-credits" class="btn btn-secondary">CREDITS</button>
+          </div>
+        </div>
+
+        <div class="menu-footer">
+          Navigate with A/D or Arrow Keys • Space to Jump • Down to Slide
+        </div>
+      </div>
+
+      <!-- =================================================================
+           3. GAMEPLAY HUD
+           ================================================================= -->
+      <div id="game-hud" class="ui-layer hidden">
+        <!-- Top HUD Bar -->
+        <div class="hud-top interactive">
+          <div class="hud-stats-left">
+            <div class="hud-card">
+              <span class="hud-label">Score</span>
+              <span id="hud-score" class="hud-score-val">0</span>
+            </div>
+            <div class="hud-card">
+              <span class="hud-label">Distance</span>
+              <span id="hud-dist" class="hud-dist-val">0 m</span>
+            </div>
+          </div>
+
+          <!-- Active Powerup Badges -->
+          <div id="hud-powerups" class="hud-powerups"></div>
+
+          <div class="hud-top-right">
+            <div class="hud-card">
+              <span>🪙</span>
+              <span id="hud-coins" class="hud-coins-val">0</span>
+            </div>
+            <button id="btn-pause" class="btn-icon-round" title="Pause Game">⏸</button>
+          </div>
+        </div>
+
+        <!-- Mobile Touch On-Screen Controls (Toggleable) -->
+        <div id="mobile-controls" class="interactive hidden">
+          <div class="mobile-dpad">
+            <button id="m-btn-left" class="mobile-btn" aria-label="Left">◀</button>
+            <button id="m-btn-right" class="mobile-btn" aria-label="Right">▶</button>
+          </div>
+          <div class="mobile-dpad">
+            <button id="m-btn-jump" class="mobile-btn" aria-label="Jump">▲</button>
+            <button id="m-btn-slide" class="mobile-btn" aria-label="Slide">▼</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           4. PAUSE MODAL
+           ================================================================= -->
+      <div id="pause-modal" class="modal-backdrop hidden interactive">
+        <div class="modal-card">
+          <h2 class="modal-title">GAME PAUSED</h2>
+          <div class="menu-actions" style="margin: 0 auto; width:100%;">
+            <button id="btn-resume" class="btn btn-primary">RESUME</button>
+            <button id="btn-restart-pause" class="btn">RESTART RUN</button>
+            <button id="btn-menu-pause" class="btn btn-secondary">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           5. GAME OVER MODAL
+           ================================================================= -->
+      <div id="game-over-modal" class="modal-backdrop hidden interactive">
+        <div class="modal-card">
+          <h2 class="modal-title" style="color: #ff4d4d;">RUN OVER</h2>
+
+          <div class="game-over-stats">
+            <div class="stat-item full-width">
+              <span class="stat-label">Final Score</span>
+              <span id="go-score" class="stat-value gold" style="font-size:2.4rem;">0</span>
+              <div id="go-new-record" class="new-record-badge hidden">🏆 NEW BEST RECORD!</div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Distance</span>
+              <span id="go-dist" class="stat-value">0 m</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Coins Gathered</span>
+              <span id="go-coins" class="stat-value gold">0</span>
+            </div>
+            <div class="stat-item full-width">
+              <span class="stat-label">All-Time Best</span>
+              <span id="go-best" class="stat-value">0</span>
+            </div>
+          </div>
+
+          <div class="menu-actions" style="margin: 0 auto; width:100%;">
+            <button id="btn-restart-gameover" class="btn btn-primary">PLAY AGAIN</button>
+            <button id="btn-menu-gameover" class="btn btn-secondary">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           6. SETTINGS MODAL
+           ================================================================= -->
+      <div id="settings-modal" class="modal-backdrop hidden interactive">
+        <div class="modal-card">
+          <h2 class="modal-title">SETTINGS</h2>
+
+          <div class="settings-group">
+            <div class="setting-row">
+              <span class="setting-label">Master Volume</span>
+              <input type="range" id="setting-master-vol" min="0" max="100" value="80">
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Music & Ambience</span>
+              <input type="range" id="setting-music-vol" min="0" max="100" value="45">
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Sound Effects</span>
+              <input type="range" id="setting-sfx-vol" min="0" max="100" value="85">
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Graphics Quality</span>
+              <select id="setting-graphics">
+                <option value="high" selected>High (Shadows & Full Res)</option>
+                <option value="medium">Medium (Balanced)</option>
+                <option value="low">Low (Fast Performance)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Touch Screen Controls</span>
+              <select id="setting-controls">
+                <option value="auto" selected>Auto (Touch devices)</option>
+                <option value="always">Always Visible</option>
+                <option value="off">Off (Swipes Only)</option>
+              </select>
+            </div>
+            <div class="setting-row" style="margin-top: 10px;">
+              <button id="btn-reset-data" class="btn btn-secondary" style="color:#ff6b6b; border-color:#ff4d4d; width:100%;">
+                Reset Saved Records & Coins
+              </button>
+            </div>
+          </div>
+
+          <button id="btn-close-settings" class="btn btn-primary" style="margin-top: 10px;">SAVE & CLOSE</button>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           7. HOW TO PLAY MODAL
+           ================================================================= -->
+      <div id="how-to-play-modal" class="modal-backdrop hidden interactive">
+        <div class="modal-card">
+          <h2 class="modal-title">HOW TO PLAY</h2>
+
+          <div class="guide-section">
+            <div class="guide-heading">🎮 Controls</div>
+            <div class="guide-row">
+              <span class="key-pill">A / D</span> or <span class="key-pill">← / →</span>
+              <span>Change Lanes (Left / Right)</span>
+            </div>
+            <div class="guide-row">
+              <span class="key-pill">W / Space</span> or <span class="key-pill">↑</span>
+              <span>Jump over obstacles</span>
+            </div>
+            <div class="guide-row">
+              <span class="key-pill">S</span> or <span class="key-pill">↓</span>
+              <span>Slide under overhead traps</span>
+            </div>
+            <div class="guide-row">
+              <span class="key-pill">Esc / P</span>
+              <span>Pause Game</span>
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-heading">📱 Touch Gestures</div>
+            <div class="guide-row">
+              <span>Swipe Left / Right: Switch Lanes</span>
+            </div>
+            <div class="guide-row">
+              <span>Swipe Up: Jump • Swipe Down: Slide</span>
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-heading">⚠️ Ancient Obstacles</div>
+            <div class="guide-row">
+              <span>🪵 Logs & Spike Traps: <strong>JUMP</strong> over them</span>
+            </div>
+            <div class="guide-row">
+              <span>🌿 Low Branches & Stone Arches: <strong>SLIDE</strong> under them</span>
+            </div>
+            <div class="guide-row">
+              <span>🪨 Boulders & Pillars: <strong>DODGE</strong> by changing lanes</span>
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-heading">✨ Power-Ups</div>
+            <div class="guide-row">
+              <span>🛡️ <strong>Temple Shield</strong>: Absorbs 1 crash</span>
+            </div>
+            <div class="guide-row">
+              <span>🧲 <strong>Coin Magnet</strong>: Attracts all nearby gold</span>
+            </div>
+            <div class="guide-row">
+              <span>✨ <strong>2X Gold</strong>: Doubles collected coin value</span>
+            </div>
+            <div class="guide-row">
+              <span>⚡ <strong>Score Boost</strong>: Doubles distance score</span>
+            </div>
+            <div class="guide-row">
+              <span>🔥 <strong>Artifact Rush</strong>: Super speed & invincible smash</span>
+            </div>
+          </div>
+
+          <button id="btn-close-how-to-play" class="btn btn-primary">GOT IT!</button>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           8. CREDITS MODAL
+           ================================================================= -->
+      <div id="credits-modal" class="modal-backdrop hidden interactive">
+        <div class="modal-card" style="text-align: center;">
+          <h2 class="modal-title">CREDITS</h2>
+          <p style="color:var(--primary-gold); font-size:1.2rem; font-weight:bold;">JUNGLE ESCAPE</p>
+          <p style="color:var(--text-dim); margin-top:8px;">A 3D Endless Runner Adventure Game</p>
+
+          <div style="background:rgba(0,0,0,0.3); padding:16px; border-radius:8px; margin: 16px 0; text-align:left; font-size:0.95rem; line-height:1.6;">
+            <p><strong>Graphics & Engine:</strong> Three.js (WebGL)</p>
+            <p><strong>Sound FX & Ambience:</strong> Procedural Web Audio API</p>
+            <p><strong>Art & Design:</strong> Procedural 3D Low-Poly Models</p>
+            <p><strong>Optimization:</strong> Zero-allocation Object Pooling & LOD</p>
+          </div>
+
+          <button id="btn-close-credits" class="btn btn-primary">CLOSE</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Three.js (Local offline library with fallback to CDN) -->
+  <script src="three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- Modular Game Scripts in Dependency Order -->
+  <script src="js/constants.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/track.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/collectibles.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jungle Escape - Automated Test Suite</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    .pass { color: #4caf50; font-weight: bold; }
+    .fail { color: #f44336; font-weight: bold; }
+    .test-box { background: #222; border: 1px solid #333; padding: 12px; margin-bottom: 8px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Jungle Escape Game Test Suite</h1>
+  <div id="results">Running tests...</div>
+  <canvas id="three-canvas" style="display:none;"></canvas>
+
+  <!-- Dummy UI elements so UI manager doesn't throw -->
+  <div id="loading-screen" style="display:none;">
+    <div id="progress-bar"></div>
+    <div id="loading-tip"></div>
+  </div>
+  <div id="main-menu" style="display:none;">
+    <div id="menu-best-score"></div>
+    <div id="menu-total-coins"></div>
+    <button id="btn-start-game"></button>
+    <button id="btn-how-to-play"></button>
+    <button id="btn-settings"></button>
+    <button id="btn-credits"></button>
+    <button id="btn-sound-toggle"></button>
+  </div>
+  <div id="game-hud" style="display:none;">
+    <div id="hud-score"></div>
+    <div id="hud-dist"></div>
+    <div id="hud-coins"></div>
+    <div id="hud-powerups"></div>
+    <button id="btn-pause"></button>
+    <div id="mobile-controls">
+      <button id="m-btn-left"></button>
+      <button id="m-btn-right"></button>
+      <button id="m-btn-jump"></button>
+      <button id="m-btn-slide"></button>
+    </div>
+  </div>
+  <div id="pause-modal" style="display:none;">
+    <button id="btn-resume"></button>
+    <button id="btn-restart-pause"></button>
+    <button id="btn-menu-pause"></button>
+  </div>
+  <div id="game-over-modal" style="display:none;">
+    <div id="go-score"></div>
+    <div id="go-dist"></div>
+    <div id="go-coins"></div>
+    <div id="go-best"></div>
+    <div id="go-new-record"></div>
+    <button id="btn-restart-gameover"></button>
+    <button id="btn-menu-gameover"></button>
+  </div>
+  <div id="settings-modal" style="display:none;">
+    <input type="range" id="setting-master-vol" value="80">
+    <input type="range" id="setting-music-vol" value="45">
+    <input type="range" id="setting-sfx-vol" value="85">
+    <select id="setting-graphics"><option value="high">High</option></select>
+    <select id="setting-controls"><option value="auto">Auto</option></select>
+    <button id="btn-reset-data"></button>
+    <button id="btn-close-settings"></button>
+  </div>
+  <div id="how-to-play-modal" style="display:none;">
+    <button id="btn-close-how-to-play"></button>
+  </div>
+  <div id="credits-modal" style="display:none;">
+    <button id="btn-close-credits"></button>
+  </div>
+
+  <script src="three.min.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/track.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/collectibles.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const resultsDiv = document.getElementById('results');
+      const tests = [];
+
+      function assert(desc, condition) {
+        tests.push({ desc, pass: !!condition });
+      }
+
+      try {
+        // Test 1: Three.js library loaded
+        assert('Three.js is loaded', typeof THREE !== 'undefined' && THREE.Scene);
+
+        // Test 2: Constants defined
+        assert('Constants defined correctly', CONSTANTS.LANES.length === 3 && CONSTANTS.CHUNK_LENGTH === 45);
+
+        // Test 3: Sound Engine initialized
+        assert('Sound Engine created', window.soundEngine && typeof window.soundEngine.playCoin === 'function');
+
+        // Test 4: Game instance created
+        const game = window.jungleGame;
+        assert('Game instance created', !!game && game.scene instanceof THREE.Scene);
+
+        // Test 5: Track chunks initialized
+        assert('Track Manager initialized with chunks', game.trackManager.chunks.length === CONSTANTS.VISIBLE_CHUNKS);
+
+        // Test 6: Player initialized in center lane
+        assert('Player starts at Lane Center', game.player.lane === CONSTANTS.LANE_CENTER);
+
+        // Test 7: Lane movement
+        game.player.moveLeft();
+        assert('Player moves left to Lane 0', game.player.targetLane === CONSTANTS.LANE_LEFT);
+        game.player.moveRight();
+        assert('Player moves right back to Lane 1', game.player.targetLane === CONSTANTS.LANE_CENTER);
+        game.player.moveRight();
+        assert('Player moves right to Lane 2', game.player.targetLane === CONSTANTS.LANE_RIGHT);
+
+        // Test 8: Jump system
+        game.player.jump();
+        assert('Player is airborne after jumping', !game.player.isGrounded && game.player.velocity.y > 0);
+        game.player.update(0.5, 20); // Simulate time forward
+        assert('Player physics integrate gravity', game.player.position.y > 0);
+
+        // Test 9: Slide system
+        game.player.isGrounded = true;
+        game.player.position.y = 0;
+        game.player.slide();
+        assert('Player is sliding and hitbox is lowered', game.player.isSliding && game.player.colliderHeight === CONSTANTS.PLAYER_SLIDE_HEIGHT);
+
+        // Test 10: Powerups
+        game.player.activateShield(10);
+        assert('Shield is activated', game.player.hasShield && game.player.shieldMesh.visible);
+        const hitResult = game.player.hitObstacle();
+        assert('Shield absorbs obstacle crash', hitResult === 'shield_consumed' && !game.player.hasShield && !game.player.isDead);
+
+        // Test 11: Collectibles & Magnet
+        const coin = game.collectibleManager.getAvailableItem();
+        coin.setupCoin(1, -20, 0.8);
+        assert('Coin setup works', coin.active && coin.isCoin);
+
+        // Test 12: Collision detection
+        const rock = game.obstacleManager.getAvailableObstacle();
+        rock.setup(CONSTANTS.OBSTACLES.ROCK, 1, 0);
+        game.player.position.set(0, 0, 0);
+        const bounds = game.player.getBounds();
+        assert('Obstacle collision detects collision in same lane', rock.checkCollision(bounds));
+
+        // Render test results
+        let html = '';
+        let allPass = true;
+        tests.forEach((t, i) => {
+          if (!t.pass) allPass = false;
+          html += `<div class="test-box ${t.pass ? 'pass' : 'fail'}">${t.pass ? '✓ PASS' : '✗ FAIL'}: ${t.desc}</div>`;
+        });
+        html += `<h2 style="color:${allPass ? '#4caf50' : '#f44336'}">${allPass ? 'ALL TESTS PASSED (' + tests.length + '/' + tests.length + ')' : 'SOME TESTS FAILED'}</h2>`;
+        resultsDiv.innerHTML = html;
+        document.title = allPass ? 'TESTS_PASSED' : 'TESTS_FAILED';
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="fail">CRITICAL ERROR: ${err.message}</div>`;
+        document.title = 'TESTS_CRASHED';
+      }
+    });
+  </script>
+</body>
+</html>
